@@ -1,0 +1,59 @@
+trigger:
+  branches: { include: [main] }
+pr:
+  branches: { include: [main] }
+
+variables:
+  - group: oha-lifecycle-secrets   # linked to Key Vault
+  - name: imageName
+    value: oha-lifecycle-api
+
+stages:
+  - stage: Test
+    jobs:
+      - job: lint_and_test
+        pool: { vmImage: ubuntu-latest }
+        steps:
+          - task: UsePythonVersion@0
+            inputs: { versionSpec: '3.12' }
+          - script: |
+              pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+              ruff check backend
+              pytest backend/tests --junitxml=junit.xml
+            displayName: Lint and test
+          - task: PublishTestResults@2
+            inputs: { testResultsFiles: junit.xml }
+
+  - stage: Build
+    dependsOn: Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: docker
+        pool: { vmImage: ubuntu-latest }
+        steps:
+          - task: Docker@2
+            inputs:
+              command: buildAndPush
+              containerRegistry: oha-acr        # service connection
+              repository: $(imageName)
+              dockerfile: backend/Dockerfile
+              tags: |
+                $(Build.BuildId)
+                latest
+
+  - stage: Deploy
+    dependsOn: Build
+    jobs:
+      - deployment: container_apps
+        environment: prod                       # add approval gate here
+        pool: { vmImage: ubuntu-latest }
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureContainerApps@1
+                  inputs:
+                    azureSubscription: oha-azure
+                    containerAppName: oha-lifecycle-api
+                    resourceGroup: rg-oha-lifecycle
+                    imageToDeploy: ohaacr.azurecr.io/$(imageName):$(Build.BuildId)

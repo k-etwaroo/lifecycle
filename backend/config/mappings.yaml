@@ -1,0 +1,107 @@
+# Values lifted from the existing PowerShell scripts. Non-secret. Changes go through PR.
+# Anything you want to verify is marked CONFIRM.
+
+domain:
+  base_dn: DC=ohpny,DC=com
+  upn_suffix: ohpny.com
+  primary_mail_domain: oakhilladvisors.com
+  secondary_mail_domain: ohpny.com
+  company: Oak Hill Advisors
+  logon_script: oha-legal-splash-page.vbs
+  disabled_ou_name: Disabled Users        # created as a sibling of the user's OU if missing
+  sam_rule: first_initial_last            # 20-char max, numeric suffix on collision
+
+common_groups:                            # every new user
+  - oha-okta-apps
+  - dataparser
+  - oha password policy
+  - okta-radiusgeneral
+  - netskopeweb
+  - zz-archive-oha
+
+offices:
+  NY:
+    ou: OU=OHA-NY,OU=OHUsers,DC=ohpny,DC=com
+    description: OHA-NY
+    office: New York
+    street: One Vanderbilt 16th Floor
+    city: New York
+    state: New York
+    postal_code: "10017"
+    country: US
+    country_name: United States
+    usage_location: US
+    groups: [oha ny employees]
+    dl: CN=OHA NY,OU=OHGroups,DC=ohpny,DC=com
+    workspace_target: OHA-NY
+  FW:
+    ou: OU=OHA-FW,OU=OHUsers,DC=ohpny,DC=com
+    description: OHA-FW
+    office: Fort Worth
+    street: 201 Main Street Suite 1250
+    city: Fort Worth
+    state: Texas
+    postal_code: "76102"
+    country: US
+    country_name: United States
+    usage_location: US
+    groups: [oha fw team, oha fw employees]
+    dl: CN=OHA FW,OU=OHGroups,DC=ohpny,DC=com
+    workspace_target: OHA-FW
+  UK:
+    ou: OU=OHA-UK,OU=OHUsers,DC=ohpny,DC=com
+    description: OHA-UK
+    office: London
+    street: 45 Pall Mall, 4th Floor
+    city: London
+    state: ""
+    postal_code: SW1Y 5JG
+    country: GB
+    country_name: United Kingdom
+    usage_location: GB
+    groups: [oha london]
+    dl: CN=OHA London,OU=OHGroups,DC=ohpny,DC=com
+    workspace_target: OHA-LDN
+
+exchange:
+  retention_policy: Oak Hill 1 Year Retention Policy
+  enable_online_archive: true
+  full_access_delegate: 17a-4@oakhilladvisors.com   # no automapping
+  mailbox_wait_timeout_s: 600
+  mailbox_wait_poll_s: 15
+
+workspaces:
+  kms_alias: alias/AWS_Workspaces_OHA_MultiRegionKey
+  running_mode: ALWAYS_ON
+  encrypt_volumes: true
+  poll_interval_s: 30
+  poll_max_min: 30
+  targets:
+    OHA-NY:  {account: "095836797281", region: us-east-1, directory_id: d-9067dfda9d,  bundle_name: OHANY_Win11, tags: {location: NY}}
+    OHA-FW:  {account: "095836797281", region: us-east-1, directory_id: d-9067dfd9da,  bundle_name: OHAFW_Win11, tags: {location: FW}}
+    OHA-LDN: {account: "095836797281", region: eu-west-2, directory_id: d-9c676fcdd54, bundle_name: OHAUK-Win11, tags: {location: LDN}}
+    BNY:     {account: "306274225301", region: us-east-1, directory_id: d-9066369f36,  bundle_id: wsb-9jsvtcxvd, username_rule: first_dot_last,
+              kms_key_arn: "arn:aws:kms:us-east-1:306274225301:key/mrk-2f3efc3270a74e69a3336c1faa2b660c"}
+  role_name: OHALifecycleRole             # CONFIRM – replaces the IT-Support SSO permission set
+
+adobe:
+  profiles:
+    pro: Default Acrobat Pro DC configuration
+    standard: Default Acrobat Standard DC configuration
+  default_country: US
+
+offboarding:
+  excluded_groups: [Domain Users]         # CONFIRM – groups never stripped
+  hide_from_gal: true
+  clear_manager: true
+  block_dl_send: true                     # adds user DN to unauthOrig on the office DLs
+  reassign_group_ownership: true          # requires a new owner + ServiceNow INC on the form
+  workspace_action: terminate             # CONFIRM – or "stop"
+  adobe_action: remove_from_profiles      # CONFIRM – or "delete_user"
+
+signature:
+  website: www.oakhilladvisors.com
+  company_line: Oak Hill Advisors (OHA)
+  font: Arial
+  font_size: 11
+  logo_width_in: 0.94

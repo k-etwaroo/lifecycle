@@ -1,4 +1,4 @@
-# OHA Lifecycle Console
+#Lifecycle Console
 
 Python/FastAPI service that runs onboarding and offboarding as auditable, retryable
 jobs across Active Directory, Microsoft Graph/Entra, Exchange Online, AWS WorkSpaces
